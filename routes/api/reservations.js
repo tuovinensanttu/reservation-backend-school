@@ -53,5 +53,24 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
+// @route   POST v1/reservations
+// @desc    Create new reservation
+// @access  Protected
+router.post("/", auth, async (req, res) => {
+  try {
+    const { startTime, endTime, service } = req.body;
+
+    const reservation = new Reservation({
+      startTime,
+      endTime,
+      service,
+      user: req.user.id,
+    });
+    await reservation.save();
+    res.status(201).json(reservation);
+  } catch (e) {
+    res.status(500).send("Server error");
+  }
+});
 
 module.exports = router;
