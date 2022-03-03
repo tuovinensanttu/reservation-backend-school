@@ -73,4 +73,38 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+// @route   PUT v1/reservations/:id
+// @desc    Update reservation by id
+// @access  Protected
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+    const reservation = await Reservation.findOne({ _id: req.params.id });
+
+    // Check that reservation exists
+    if (!reservation) {
+      res
+          .status(404)
+          .json({ errors: [{ msg: "No reservation with that id" }] });
+    }
+
+    // Check if user is authenticated to make changes
+    if (!isAuthorized(reservation, user)) {
+      res.status(403).json({
+        errors: [{ msg: "You are not authorized to read this data" }],
+      });
+    }
+
+    const updatedReservation = await Reservation.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: req.body },
+        { new: true }
+    );
+
+    res.json(updatedReservation);
+  } catch (e) {
+    res.status(500).send("Server error");
+  }
+});
+
 module.exports = router;
