@@ -107,4 +107,32 @@ router.put("/:id", auth, async (req, res) => {
   }
 });
 
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+    const reservation = await Reservation.findOne({ _id: req.params.id });
+
+    if (!reservation) {
+      res
+          .status(404)
+          .json({ errors: [{ msg: "No reservation with that id" }] });
+    }
+
+    await reservation.delete();
+
+    // If reservation doesn't belong to authenticated user OR
+    // to service they are maintaining, return object
+    if (!isAuthorized(reservation, user)) {
+      res.status(403).json({
+        errors: [{ msg: "You are not authorized to delete this data" }],
+      });
+    }
+
+    res.status(200).json({ msg: "Reservation deleted successfully" });
+  } catch (e) {
+    res.status(500).send("Server error");
+  }
+});
+
+
 module.exports = router;
