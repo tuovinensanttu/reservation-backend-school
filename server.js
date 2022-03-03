@@ -5,7 +5,6 @@ const bodyParser = require("body-parser");
 
 // Path imports
 const service = require("./routes/api/service");
-const reservation = require("./routes/api/reservations");
 const users = require("./routes/api/users");
 const authentication = require("./routes/api/authentication");
 
@@ -16,7 +15,7 @@ app.use(bodyParser.json());
 app.use("/v1/users", users);
 app.use("/v1/auth", authentication);
 app.use("/v1/services", service);
-app.use("/v1/reservations", reservation);
+
 
 mongoose
   .connect(process.env.DB_URI, {
