@@ -53,5 +53,86 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
+// @route   POST v1/reservations
+// @desc    Create new reservation
+// @access  Protected
+router.post("/", auth, async (req, res) => {
+  try {
+    const { startTime, endTime, service } = req.body;
+
+    const reservation = new Reservation({
+      startTime,
+      endTime,
+      service,
+      user: req.user.id,
+    });
+    await reservation.save();
+    res.status(201).json(reservation);
+  } catch (e) {
+    res.status(500).send("Server error");
+  }
+});
+
+// @route   PUT v1/reservations/:id
+// @desc    Update reservation by id
+// @access  Protected
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+    const reservation = await Reservation.findOne({ _id: req.params.id });
+
+    // Check that reservation exists
+    if (!reservation) {
+      res
+          .status(404)
+          .json({ errors: [{ msg: "No reservation with that id" }] });
+    }
+
+    // Check if user is authenticated to make changes
+    if (!isAuthorized(reservation, user)) {
+      res.status(403).json({
+        errors: [{ msg: "You are not authorized to read this data" }],
+      });
+    }
+
+    const updatedReservation = await Reservation.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: req.body },
+        { new: true }
+    );
+
+    res.json(updatedReservation);
+  } catch (e) {
+    res.status(500).send("Server error");
+  }
+});
+
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id });
+    const reservation = await Reservation.findOne({ _id: req.params.id });
+
+    if (!reservation) {
+      res
+          .status(404)
+          .json({ errors: [{ msg: "No reservation with that id" }] });
+    }
+
+    await reservation.delete();
+
+    // If reservation doesn't belong to authenticated user OR
+    // to service they are maintaining, return object
+    if (!isAuthorized(reservation, user)) {
+      res.status(403).json({
+        errors: [{ msg: "You are not authorized to delete this data" }],
+      });
+    }
+
+    res.status(200).json({ msg: "Reservation deleted successfully" });
+  } catch (e) {
+    res.status(500).send("Server error");
+  }
+});
+
 
 module.exports = router;
